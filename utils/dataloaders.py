@@ -32,6 +32,7 @@ from utils.augmentations import (Albumentations, augment_hsv, classify_albumenta
                                  letterbox, mixup, random_perspective)
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
                            cv2, is_colab, is_kaggle, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
+from utils.partial import FULL_TO_PARTIAL
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -724,6 +725,16 @@ class LoadImagesAndLabels(Dataset):
             labels, segments = self.labels[index].copy(), self.segments[index].copy()
             if labels.size:
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
+                for i, row in enumerate(labels):
+                    if row[0] in FULL_TO_PARTIAL:
+                        bounding_box_touches_the_edge = (
+                            row[1] <= x1a
+                            or row[2] <= y1a
+                            or row[3] >= x2a
+                            or row[4] >= y2a
+                        )
+                        if bounding_box_touches_the_edge:
+                            row[0] = FULL_TO_PARTIAL[row[0]]
                 segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
             labels4.append(labels)
             segments4.extend(segments)

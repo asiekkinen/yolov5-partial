@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 from utils.metrics import bbox_iou
+from utils.partial import FULL_TO_PARTIAL
 from utils.torch_utils import de_parallel
 
 
@@ -154,6 +155,11 @@ class ComputeLoss:
                 if self.nc > 1:  # cls loss (only if multiple classes)
                     t = torch.full_like(pcls, self.cn, device=self.device)  # targets
                     t[range(n), tcls[i]] = self.cp
+                    full_indexes = torch.where((t[:, list(FULL_TO_PARTIAL.keys())] > 0.5).any(axis=1))[0]
+                    partial_indexes = torch.where((t[:, list(FULL_TO_PARTIAL.values())] > 0.5).any(axis=1))[0]
+                    t[full_indexes, list(FULL_TO_PARTIAL.values())] = self.cp
+                    t[partial_indexes, list(FULL_TO_PARTIAL.keys())] = self.cp
+                    t[partial_indexes, list(FULL_TO_PARTIAL.values())] = self.cn
                     lcls += self.BCEcls(pcls, t)  # BCE
 
                 # Append targets to text file

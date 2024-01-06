@@ -13,6 +13,7 @@ import torchvision.transforms.functional as TF
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
+from utils.partial import FULL_TO_PARTIAL
 
 IMAGENET_MEAN = 0.485, 0.456, 0.406  # RGB mean
 IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
@@ -231,6 +232,18 @@ def random_perspective(im,
         i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
         targets = targets[i]
         targets[:, 1:5] = new[i]
+
+        for j, row in enumerate(targets):
+            if row[0] in FULL_TO_PARTIAL:
+                bounding_box_touches_the_edge = (
+                    row[1] <= 0
+                    or row[2] <= 0
+                    or row[3] >= im.shape[1]
+                    or row[4] >= im.shape[0]
+                )
+                if bounding_box_touches_the_edge:
+                    row[0] = FULL_TO_PARTIAL[row[0]]
+
 
     return im, targets
 
