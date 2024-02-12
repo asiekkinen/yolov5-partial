@@ -43,6 +43,7 @@ class FocalLoss(nn.Module):
         self.reduction = loss_fcn.reduction
         self.loss_fcn.reduction = 'none'  # required to apply FL to each element
 
+
     def forward(self, pred, true):
         loss = self.loss_fcn(pred, true)
         # p_t = torch.exp(-loss)
@@ -157,9 +158,9 @@ class ComputeLoss:
                     t[range(n), tcls[i]] = self.cp
                     full_indexes = torch.where((t[:, list(FULL_TO_PARTIAL.keys())] > 0.5).any(axis=1))[0]
                     partial_indexes = torch.where((t[:, list(FULL_TO_PARTIAL.values())] > 0.5).any(axis=1))[0]
-                    t[full_indexes, list(FULL_TO_PARTIAL.values())] = self.cp
-                    t[partial_indexes, list(FULL_TO_PARTIAL.keys())] = self.cp
-                    t[partial_indexes, list(FULL_TO_PARTIAL.values())] = self.cn
+                    t[full_indexes.unsqueeze(1), list(FULL_TO_PARTIAL.values())] = self.cp
+                    t[partial_indexes.unsqueeze(1), list(FULL_TO_PARTIAL.keys())] = self.cp
+                    t[partial_indexes.unsqueeze(1), list(FULL_TO_PARTIAL.values())] = self.cn
                     lcls += self.BCEcls(pcls, t)  # BCE
 
                 # Append targets to text file
